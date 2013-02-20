@@ -8,8 +8,22 @@ Email:  yupbank@gmail.com
 Created on
 2013-02-21
 '''
-from tornado.web import RequestHandler
-import .session
+from tornado.web import RequestHandler, StaticFileHandler
+from mako.template import Template
+from mako.lookup import TemplateLookup
+import session
+from setting import settings
+
+MAKOLOOKUP = dict(
+    directories = settings['template_path'],
+    disable_unicode=True,
+    encoding_errors="ignore",
+    default_filters=['str', 'h'],
+    #input_encoding='utf-8',
+    output_encoding=''
+)
+
+MYLOOKUP = TemplateLookup(**MAKOLOOKUP)
 
 
 class BaseHandler(RequestHandler):
@@ -19,6 +33,12 @@ class BaseHandler(RequestHandler):
             self.session = None
         else:
             self.session = self._create_session()
+
+    def render(self, template_name=None, **kwargs):
+        my_template = MYLOOKUP.get_template(template_name)
+        content = my_template.render(**kwargs)
+        if not self._finished:
+            return self.finish(content)
 
     def _create_session(self):
         settings = self.application.settings # just a shortcut
